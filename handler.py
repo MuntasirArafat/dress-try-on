@@ -1,4 +1,5 @@
 import base64
+import traceback
 import uuid
 
 import runpod
@@ -8,24 +9,11 @@ from utils import download_image
 
 
 def handler(job):
-    """
-    Input:
-
-    {
-      "input": {
-        "person_url": "...",
-        "garment_url": "...",
-        "category": "tops"
-      }
-    }
-    """
-
     try:
         job_input = job["input"]
 
         person_url = job_input["person_url"]
         garment_url = job_input["garment_url"]
-
         category = job_input.get("category", "tops")
 
         request_id = str(uuid.uuid4())
@@ -37,9 +25,9 @@ def handler(job):
         download_image(garment_url, garment_path)
 
         output_path = generate_tryon(
-            person_path=person_path,
-            garment_path=garment_path,
-            category=category,
+            person_path,
+            garment_path,
+            category
         )
 
         with open(output_path, "rb") as f:
@@ -47,13 +35,16 @@ def handler(job):
 
         return {
             "success": True,
-            "image": base64.b64encode(image_bytes).decode("utf-8"),
+            "image": base64.b64encode(
+                image_bytes
+            ).decode("utf-8")
         }
 
     except Exception as e:
         return {
             "success": False,
             "error": str(e),
+            "traceback": traceback.format_exc()
         }
 
 
