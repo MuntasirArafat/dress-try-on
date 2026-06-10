@@ -1,6 +1,5 @@
 import os
 import subprocess
-import traceback
 
 import torch
 from PIL import Image
@@ -32,24 +31,11 @@ def ensure_weights():
         text=True
     )
 
-    print("DOWNLOAD STDOUT:")
     print(result.stdout)
-
-    print("DOWNLOAD STDERR:")
     print(result.stderr)
 
     if result.returncode != 0:
-        raise RuntimeError(
-            f"""
-Weight download failed
-
-STDOUT:
-{result.stdout}
-
-STDERR:
-{result.stderr}
-"""
-        )
+        raise RuntimeError("Weight download failed")
 
 
 def load_model():
@@ -60,13 +46,14 @@ def load_model():
 
     ensure_weights()
 
-    print("Loading FASHN VTON model...")
+    print("Loading FASHN VTON pipeline...")
 
+    # correct import (from official repo)
     from fashn_vton import TryOnPipeline
 
+    # IMPORTANT: only weights_dir is supported
     MODEL = TryOnPipeline(
-        weights_dir=WEIGHTS_DIR,
-        torch_dtype=torch.float16
+        weights_dir=WEIGHTS_DIR
     )
 
     print("Model loaded")
@@ -74,24 +61,20 @@ def load_model():
     return MODEL
 
 
-def generate_tryon(
-    person_path,
-    garment_path,
-    category="tops"
-):
+def generate_tryon(person_path, garment_path, category="tops"):
     model = load_model()
 
     person = Image.open(person_path).convert("RGB")
     garment = Image.open(garment_path).convert("RGB")
 
+    # official API supports these args (from repo example)
     result = model(
         person_image=person,
         garment_image=garment,
-        category=category
+        category=category,
     )
 
     output_path = "/tmp/output.png"
-
     result.images[0].save(output_path)
 
     return output_path
