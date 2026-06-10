@@ -15,7 +15,6 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Clone FASHN VTON
 RUN git clone https://github.com/fashn-AI/fashn-vton-1.5.git /app/fashn-vton
 
 WORKDIR /app/fashn-vton
