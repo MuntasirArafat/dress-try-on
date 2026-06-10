@@ -1,5 +1,6 @@
 import os
 import subprocess
+import traceback
 
 import torch
 from PIL import Image
@@ -11,25 +12,44 @@ MODEL_FILE = f"{WEIGHTS_DIR}/model.safetensors"
 
 
 def ensure_weights():
-    """
-    Download weights only if missing.
-    """
-
     if os.path.exists(MODEL_FILE):
+        print("Weights already present")
         return
 
     os.makedirs(WEIGHTS_DIR, exist_ok=True)
 
-    subprocess.run(
+    print("Downloading weights...")
+
+    result = subprocess.run(
         [
             "python",
             "scripts/download_weights.py",
             "--weights-dir",
-            WEIGHTS_DIR,
+            WEIGHTS_DIR
         ],
         cwd="/app/fashn-vton",
-        check=True,
+        capture_output=True,
+        text=True
     )
+
+    print("DOWNLOAD STDOUT:")
+    print(result.stdout)
+
+    print("DOWNLOAD STDERR:")
+    print(result.stderr)
+
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"""
+Weight download failed
+
+STDOUT:
+{result.stdout}
+
+STDERR:
+{result.stderr}
+"""
+        )
 
 
 def load_model():
@@ -38,7 +58,6 @@ def load_model():
     if MODEL is not None:
         return MODEL
 
-    print("Downloading weights if needed...")
     ensure_weights()
 
     print("Loading FASHN VTON model...")
@@ -47,8 +66,10 @@ def load_model():
 
     MODEL = TryOnPipeline(
         weights_dir=WEIGHTS_DIR,
-        torch_dtype=torch.float16,
+        torch_dtype=torch.float16
     )
+
+    print("Model loaded")
 
     return MODEL
 
@@ -66,7 +87,7 @@ def generate_tryon(
     result = model(
         person_image=person,
         garment_image=garment,
-        category=category,
+        category=category
     )
 
     output_path = "/tmp/output.png"
